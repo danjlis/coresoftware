@@ -1,0 +1,49 @@
+PHG4ScintillatorSlatDefs.lo: PHG4ScintillatorSlatDefs.cc \
+ /usr/include/stdc-predef.h PHG4ScintillatorSlatDefs.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/utility \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/c++config.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/os_defines.h \
+ /usr/include/features.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-64.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/cpu_defines.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_relops.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_pair.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/move.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/concept_check.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/type_traits \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/initializer_list
+
+/usr/include/stdc-predef.h:
+
+PHG4ScintillatorSlatDefs.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/utility:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/c++config.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/os_defines.h:
+
+/usr/include/features.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-64.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/x86_64-pc-linux-gnu/bits/cpu_defines.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_relops.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_pair.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/move.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/concept_check.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/type_traits:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/initializer_list:
