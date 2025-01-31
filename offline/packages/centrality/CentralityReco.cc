@@ -241,6 +241,7 @@ int CentralityReco::FillCentralityInfo()
       std::cout << " Charge : " << m_mbd_total_charge << std::endl;
     }
 
+
   m_central->set_centile(CentralityInfo::PROP::mbd_NS, value);
   m_central->set_centrality_bin(CentralityInfo::PROP::mbd_NS, binvalue);
 

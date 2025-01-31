@@ -13,6 +13,7 @@
 #include <globalvertex/GlobalVertex.h>
 #include <mbd/MbdPmtContainer.h>
 #include <mbd/MbdPmtHit.h>
+#include <mbd/MbdOut.h>
 
 #include <fun4all/Fun4AllReturnCodes.h>
 
@@ -101,24 +102,30 @@ int MinimumBiasClassifier::FillMinimumBiasInfo()
   //   return Fun4AllReturnCodes::EVENT_OK;
   // }
 
-  GlobalVertex *vtx = m_global_vertex_map->begin()->second;
+  if (m_useGlobal)
+    {
+      GlobalVertex *vtx = m_global_vertex_map->begin()->second;
 
-  if (!vtx)
-  {
-    m_mb_info->setIsAuAuMinimumBias(false);
-    return Fun4AllReturnCodes::EVENT_OK;
-  }
-
-  if (!vtx->isValid())
-  {
-    m_mb_info->setIsAuAuMinimumBias(false);
-    return Fun4AllReturnCodes::EVENT_OK;
-  }
+      if (!vtx)
+	{
+	  m_mb_info->setIsAuAuMinimumBias(false);
+	  return Fun4AllReturnCodes::EVENT_OK;
+	}
+      
+      if (!vtx->isValid())
+	{
+	  m_mb_info->setIsAuAuMinimumBias(false);
+	  return Fun4AllReturnCodes::EVENT_OK;
+	}
+      m_vertex = vtx->get_z();
+    }
+  else
+    {
+      m_vertex = m_mbdout->get_zvtx();
+    }
 
   bool minbiascheck = true;;
 
-  m_vertex = vtx->get_z();
-    
   m_vertex_scale = getVertexScale();
 
   if (Verbosity())
@@ -250,6 +257,7 @@ int MinimumBiasClassifier::GetNodes(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTRUN;
     }
 
+
   if (!m_issim)
     {
       m_zdcinfo = findNode::getClass<Zdcinfo>(topNode, "Zdcinfo");
@@ -269,12 +277,26 @@ int MinimumBiasClassifier::GetNodes(PHCompositeNode *topNode)
       std::cout << "Getting Vertex Map" << std::endl;
     }
 
-  m_global_vertex_map = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  
-  if (!m_global_vertex_map)
+  m_mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
+  if (Verbosity())
     {
-      std::cout << "no vertex map node " << std::endl;
+      std::cout << "Getting MBD Out" << std::endl;
+    }
+
+  if (!m_mbdout)
+    {
+      std::cout << "no MBD out node " << std::endl;
       return Fun4AllReturnCodes::ABORTRUN;
+    }
+  if (m_useGlobal)
+    {
+      m_global_vertex_map = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  
+      if (!m_global_vertex_map)
+	{
+	  std::cout << __FILE__ << "no vertex map node " << std::endl;
+	  return Fun4AllReturnCodes::ABORTRUN;
+	}
     }
   return Fun4AllReturnCodes::EVENT_OK;
 }

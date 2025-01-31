@@ -19,6 +19,7 @@ class MbdPmtHit;
 class Zdcinfo;
 class GlobalVertexMap;
 class GlobalVertex;
+class MbdOut;
 
 class MinimumBiasClassifier : public SubsysReco
 {
@@ -58,8 +59,9 @@ class MinimumBiasClassifier : public SubsysReco
     m_overwrite_vtx = true;    
   }
   void setIsSim(const bool sim) { m_issim = sim; }
-
+  void setUseGlobal(const bool glob) { m_useGlobal = glob; }
  private:
+  bool m_useGlobal{false};
   bool m_issim{false};
   float getVertexScale();
   std::string m_dbfilename;
@@ -81,6 +83,7 @@ class MinimumBiasClassifier : public SubsysReco
   MbdPmtContainer *m_mbd_container{nullptr};
   MbdPmtHit *m_mbd_pmt{nullptr};
   GlobalVertexMap *m_global_vertex_map{nullptr};
+  MbdOut *m_mbdout{nullptr};
   Zdcinfo *m_zdcinfo{nullptr};
 
   std::array<float, 2> m_zdc_energy_sum{};
