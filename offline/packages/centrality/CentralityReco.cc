@@ -89,10 +89,11 @@ int CentralityReco::Download_centralityScale(const std::string &dbfile)
     CDBTTree *cdbttree = new CDBTTree(dbase_file);
     cdbttree->LoadCalibrations();
     m_centrality_scale = cdbttree->GetDoubleValue(0, "centralityscale");
+    
     if (Verbosity())
-    {
-      std::cout << "centscale = " << m_centrality_scale << std::endl;
-    }
+      {
+	std::cout << "centscale = " << m_centrality_scale << std::endl;
+      }
     delete cdbttree;
   }
   else

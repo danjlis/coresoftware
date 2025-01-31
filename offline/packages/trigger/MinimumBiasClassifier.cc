@@ -162,8 +162,9 @@ int MinimumBiasClassifier::FillMinimumBiasInfo()
     }
 
   // MBD Background cut
-  if (m_mbd_charge_sum[1] < m_mbd_north_cut && m_mbd_charge_sum[0] > m_mbd_south_cut  && minbiascheck)
+  if (!m_issim && m_mbd_charge_sum[1] < m_mbd_north_cut && m_mbd_charge_sum[0] > m_mbd_south_cut  && minbiascheck)
     {
+
       minbiascheck = false;
       //    m_mb_info->setIsAuAuMinimumBias(false);
       //return Fun4AllReturnCodes::EVENT_OK;  
@@ -188,8 +189,9 @@ int MinimumBiasClassifier::FillMinimumBiasInfo()
 	    }
 	}
     }
-  if ((m_mbd_charge_sum[0] + m_mbd_charge_sum[1]) > 2100  && minbiascheck)
+  if (!m_issim && (m_mbd_charge_sum[0] + m_mbd_charge_sum[1]) > 2100  && minbiascheck)
     {
+
       minbiascheck = false;
       //m_mb_info->setIsAuAuMinimumBias(false);
       //return Fun4AllReturnCodes::EVENT_OK;	 
