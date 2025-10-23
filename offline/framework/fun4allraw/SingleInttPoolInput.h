@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <vector>
+
 class InttRawHit;
 class Packet;
 class PHCompositeNode;
@@ -18,6 +19,12 @@ class intt_pool;
 class SingleInttPoolInput : public SingleStreamingInput
 {
  public:
+  enum InttStreamingMode
+  {
+    UNDEFINED = 0,
+    STREAMING = 1,
+    TRIGGERED = -1
+  };
   explicit SingleInttPoolInput(const std::string &name);
   ~SingleInttPoolInput() override;
   void FillPool(const uint64_t minBCO) override;
@@ -29,8 +36,11 @@ class SingleInttPoolInput : public SingleStreamingInput
   void CreateDSTNode(PHCompositeNode *topNode) override;
 
   void SetBcoRange(const unsigned int value) { m_BcoRange = value; }
-  void ConfigureStreamingInputManager() override;
+  unsigned int GetBcoRange() const { return m_BcoRange; }
+  void ConfigureStreamingInputManager() override { return; }
+  void ConfigureStreamingInputManagerLocal(const int runnumber);
   void SetNegativeBco(const unsigned int value) { m_NegativeBco = value; }
+  unsigned int GetNegativeBco() const { return m_NegativeBco; }
   const std::set<uint64_t> &BclkStack() const override { return m_BclkStack; }
   const std::map<uint64_t, std::set<int>> &BeamClockFEE() const override { return m_BeamClockFEE; }
 
@@ -42,6 +52,7 @@ class SingleInttPoolInput : public SingleStreamingInput
   unsigned int m_BcoRange{0};
   unsigned int m_NegativeBco{0};
   int m_SavedRunNumber{0};
+  int m_StreamingFlag{InttStreamingMode::UNDEFINED};
   bool m_SkipEarlyEvents{true};
   std::array<uint64_t, 14> m_PreviousClock{};
   std::array<uint64_t, 14> m_Rollover{};
