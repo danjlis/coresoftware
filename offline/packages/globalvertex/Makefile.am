@@ -35,6 +35,10 @@ pkginclude_HEADERS = \
   MbdVertexv2.h \
   MbdVertexMap.h \
   MbdVertexMapv1.h \
+  CaloVertex.h \
+  CaloVertexv1.h \
+  CaloVertexMap.h \
+  CaloVertexMapv1.h \
   SvtxVertex.h \
   SvtxVertex_v1.h \
   SvtxVertex_v2.h \
@@ -57,6 +61,10 @@ ROOTDICTS = \
   MbdVertexv2_Dict.cc \
   MbdVertexMap_Dict.cc \
   MbdVertexMapv1_Dict.cc \
+  CaloVertex_Dict.cc \
+  CaloVertexv1_Dict.cc \
+  CaloVertexMap_Dict.cc \
+  CaloVertexMapv1_Dict.cc \
   SvtxVertex_Dict.cc \
   SvtxVertex_v1_Dict.cc \
   SvtxVertex_v2_Dict.cc \
@@ -83,6 +91,9 @@ libglobalvertex_io_la_SOURCES = \
   MbdVertexv2.cc \
   MbdVertexMap.cc \
   MbdVertexMapv1.cc \
+  CaloVertexv1.cc \
+  CaloVertexMap.cc \
+  CaloVertexMapv1.cc \
   SvtxVertex.cc \
   SvtxVertex_v1.cc \
   SvtxVertex_v2.cc \

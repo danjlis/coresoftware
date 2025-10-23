@@ -22,7 +22,9 @@ class GlobalVertex : public PHObject
     SMEARED = 200,
     MBD = 300,
     SVTX = 400,
-    SVTX_MBD = 500
+    SVTX_MBD = 500,
+    CALO = 600,
+    MBD_CALO = 700
   };
 
   typedef std::vector<const Vertex*> VertexVector;
