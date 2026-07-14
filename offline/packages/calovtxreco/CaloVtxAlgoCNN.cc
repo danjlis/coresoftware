@@ -27,7 +27,7 @@ namespace
   const std::string GeomNodeIhc = "TOWERGEOM_HCALIN";
 }  // namespace
 
-// onnxruntime session (pImpl, keeps Ort types out of the header)
+// onnxruntime session (pImpl)
 struct CaloVtxAlgoCNN::OnnxSession
 {
   Ort::Env env{ORT_LOGGING_LEVEL_WARNING, "CaloVtxAlgoCNN"};
