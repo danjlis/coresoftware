@@ -44,6 +44,7 @@ struct CaloVtxAlgoCNN::OnnxSession
   }
 };
 
+CaloVtxAlgoCNN::CaloVtxAlgoCNN() = default;
 CaloVtxAlgoCNN::~CaloVtxAlgoCNN() = default;
 
 int CaloVtxAlgoCNN::Init(PHCompositeNode * /*topNode*/)
