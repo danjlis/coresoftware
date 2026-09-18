@@ -42,6 +42,7 @@ pkginclude_HEADERS = \
   FastJetOptions.h \
   Jet.h \
   JetCalib.h \
+  JetSmear.h \
   Jetv1.h \
   Jetv2.h \
   JetContainer.h \
@@ -85,6 +86,7 @@ libjetbase_la_SOURCES = \
   FastJetAlgo.cc \
   FastJetOptions.cc \
   JetCalib.cc \
+  JetSmear.cc \
   JetProbeMaker.cc \
   JetProbeInput.cc \
   JetReco.cc \

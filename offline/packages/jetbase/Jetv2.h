@@ -85,6 +85,10 @@ class Jetv2 : public Jet
   float get_ohcal_frac() const override { return _ohcal_frac; }
   void set_ohcal_frac(float frac) override { _ohcal_frac = frac; }
 
+  float get_reweight() const override { return _reweight; }
+  int hasReweight() const override { return _hasReweight; }
+  void set_reweight(float reweight) override { _reweight = reweight; _hasReweight = 0; }
+								         
   float get_eta() const override;
 
   int get_isCalib()  override {return _isCalib;}
@@ -147,6 +151,9 @@ class Jetv2 : public Jet
   float _emcal_frac{std::numeric_limits<float>::quiet_NaN()};
   float _ihcal_frac{std::numeric_limits<float>::quiet_NaN()};
   float _ohcal_frac{std::numeric_limits<float>::quiet_NaN()};
+
+  int _hasReweight{0};
+  float _reweight{std::numeric_limits<float>::quiet_NaN()};
 
   /// calibration flag
   int _isCalib{0};
