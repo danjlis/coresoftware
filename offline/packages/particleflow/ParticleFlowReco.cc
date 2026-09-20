@@ -870,7 +870,8 @@ int ParticleFlowReco::process_event(PHCompositeNode *topNode)
         // for now, just make the first HAD-linked track point to this new EM, and vice versa
         _pflow_EM_match_TRK.at(new_EM).push_back(_pflow_HAD_match_TRK.at(had).at(0));
         _pflow_TRK_match_EM.at(_pflow_HAD_match_TRK.at(had).at(0)).push_back(new_EM);
-
+	// add to make sure em cluster isn't double counted
+	_pflow_EM_match_HAD.at(new_EM).push_back(had);
         // add to expected calo
         total_EMHAD_E += _pflow_EM_E.at(new_EM);
 
