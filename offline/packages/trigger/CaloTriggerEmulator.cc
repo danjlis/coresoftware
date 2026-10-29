@@ -11,7 +11,6 @@
 #include <ffamodules/CDBInterface.h>
 
 #include <ffarawobjects/CaloPacket.h>
-#include <ffarawobjects/CaloPacketContainer.h>
 
 #include <cdbobjects/CDBHistos.h>  // for CDBHistos
 #include <cdbobjects/CDBTTree.h>   // for CDBHistos
@@ -259,12 +258,6 @@ void CaloTriggerEmulator::setTriggerType(const std::string &name)
 void CaloTriggerEmulator::setTriggerType(TriggerDefs::TriggerId triggerid)
 {
   m_triggerid = triggerid;
-}
-
-// make file and histomanager (but nothing goes in the file at the moment)
-int CaloTriggerEmulator::Init(PHCompositeNode * /*topNode*/)
-{
-  return 0;
 }
 
 // at the beginning of the run
@@ -604,19 +597,7 @@ int CaloTriggerEmulator::process_offline(PHCompositeNode *topNode)
 
     for (int pid = m_packet_low_emcal; pid <= m_packet_high_emcal; pid++)
     {
-      CaloPacket *packet;
-      if (m_use_individual_packets)
-      {
-        if (Verbosity())
-        {
-          std::cout << "Individual packets" << std::endl;
-        }
-        packet = findNode::getClass<CaloPacket>(topNode, pid);
-      }
-      else
-      {
-        packet = m_emcal_packets->getPacketbyId(pid);
-      }
+      CaloPacket *packet = findNode::getClass<CaloPacket>(topNode, pid);
       if (packet)
       {
         if (Verbosity())
@@ -711,16 +692,7 @@ int CaloTriggerEmulator::process_offline(PHCompositeNode *topNode)
     unsigned int iwave = 0;
     for (int pid = m_packet_low_hcalout; pid <= m_packet_high_hcalout; pid++)
     {
-      CaloPacket *packet;
-      if (m_use_individual_packets)
-      {
-        packet = findNode::getClass<CaloPacket>(topNode, pid);
-      }
-      else
-      {
-        packet = m_hcal_packets->getPacketbyId(pid);
-      }
-
+      CaloPacket *packet = findNode::getClass<CaloPacket>(topNode, pid);
       if (packet)
       {
         int nchannels = packet->iValue(0, "CHANNELS");
@@ -775,17 +747,7 @@ int CaloTriggerEmulator::process_offline(PHCompositeNode *topNode)
     unsigned int iwave = 0;
     for (int pid = m_packet_low_hcalin; pid <= m_packet_high_hcalin; pid++)
     {
-      CaloPacket *packet;
-
-      if (m_use_individual_packets)
-      {
-        packet = findNode::getClass<CaloPacket>(topNode, pid);
-      }
-      else
-      {
-        packet = m_hcal_packets->getPacketbyId(pid);
-      }
-
+      CaloPacket *packet = findNode::getClass<CaloPacket>(topNode, pid);
       if (packet)
       {
         int nchannels = packet->iValue(0, "CHANNELS");
@@ -840,7 +802,7 @@ int CaloTriggerEmulator::process_waveforms(PHCompositeNode *topNode)
     return process_sim();
   }
 
-  if (m_useoffline || m_use_individual_packets)
+  if (m_use_individual_packets)
   {
     return process_offline(topNode);
   }
@@ -1891,6 +1853,7 @@ int CaloTriggerEmulator::process_trigger()
     // Make the jet primitives
     m_triggerid = TriggerDefs::TriggerId::jetTId;
     std::vector<unsigned int> *trig_bits = m_ll1out_jet->GetTriggerBits();
+    std::fill(bits.begin(), bits.end(), 0);
     std::vector<unsigned int> jet_map[32][9]{};
     for (auto &ie : jet_map)
     {
@@ -2234,12 +2197,7 @@ void CaloTriggerEmulator::GetNodes(PHCompositeNode *topNode)
     }
     else
     {
-      m_hcal_packets = findNode::getClass<CaloPacketContainer>(topNode, "HCALPackets");
-      if (m_hcal_packets)
-      {
-        m_useoffline = true;
-      }
-      else if (!m_hcal_packets && !m_event)
+      if (!m_event)
       {
         m_use_individual_packets = true;
       }
@@ -2286,13 +2244,7 @@ void CaloTriggerEmulator::GetNodes(PHCompositeNode *topNode)
 
     if (!hcalset)
     {
-      m_hcal_packets = findNode::getClass<CaloPacketContainer>(topNode, "HCALPackets");
-
-      if (m_hcal_packets)
-      {
-        m_useoffline = true;
-      }
-      else if (!m_hcal_packets && !m_event)
+      if (!m_event)
       {
         m_use_individual_packets = true;
       }
@@ -2319,12 +2271,7 @@ void CaloTriggerEmulator::GetNodes(PHCompositeNode *topNode)
     }
     else
     {
-      m_emcal_packets = findNode::getClass<CaloPacketContainer>(topNode, "CEMCPackets");
-      if (m_emcal_packets)
-      {
-        m_useoffline = true;
-      }
-      else if (!m_emcal_packets && !m_event)
+      if (!m_event)
       {
         m_use_individual_packets = true;
       }

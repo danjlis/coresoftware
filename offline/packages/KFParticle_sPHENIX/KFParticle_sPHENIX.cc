@@ -72,6 +72,7 @@ KFParticle_sPHENIX::KFParticle_sPHENIX()
   , m_outfile_name("outputData.root")
   , m_outfile(nullptr)
 {
+  setToolsInstance(static_cast<KFParticle_Tools *>(this));
 }
 
 KFParticle_sPHENIX::KFParticle_sPHENIX(const std::string &name)
@@ -84,6 +85,7 @@ KFParticle_sPHENIX::KFParticle_sPHENIX(const std::string &name)
   , m_outfile_name("outputData.root")
   , m_outfile(nullptr)
 {
+  setToolsInstance(static_cast<KFParticle_Tools *>(this));
 }
 
 int KFParticle_sPHENIX::Init(PHCompositeNode *topNode)
@@ -121,6 +123,17 @@ int KFParticle_sPHENIX::Init(PHCompositeNode *topNode)
   if (m_use_PID)
   {
     init_dEdx_fits();
+  }
+
+  if (m_force_mixed_event)
+  {
+    m_require_bunch_crossing_match = false;
+    m_require_track_and_vertex_match = false;
+
+    if (Verbosity() >= VERBOSITY_MORE)
+    {
+      std::cout << "KFParticle: You have forced to make a mixed-event sample. This overwrites any request to match bunch-crossings between tracks and primary vertices" << std::endl;
+    }
   }
 
   return returnCode;

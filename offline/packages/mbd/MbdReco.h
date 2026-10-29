@@ -16,7 +16,6 @@ class MbdOut;
 class MbdGeom;
 class Event;
 class CaloPacket;
-class CaloPacketContainer;
 class Gl1Packet;
 class EventHeader;
 class TF1;
@@ -47,21 +46,20 @@ class MbdReco : public SubsysReco
   int  getNodes(PHCompositeNode *topNode);
   int  _simflag{0};
   int  _calpass{0};
-  bool _always_process_charge{0};
+  bool _always_process_charge{1};
   int  _mbdonly{0};     // only use mbd triggers
   int  _rawdstflag{0};  // dst with raw container
   int  _fitsonly{0};    // stop reco after waveform fits (for DST_CALOFIT pass)
   int  _fiteval{0};     // overload with segment+1
 
-  float m_tres = 0.05;
-  std::unique_ptr<TF1> m_gaussian = nullptr;
+  float m_tres{0.05};
+  std::unique_ptr<TF1> m_gaussian{nullptr};
 
   int _evtnum{-1};
 
   std::unique_ptr<MbdEvent> m_mbdevent{nullptr};
   Event *m_event{nullptr};
   std::array<CaloPacket *,2>m_mbdpacket{nullptr};
-  CaloPacketContainer *m_mbdpackets{nullptr};
   Gl1Packet *m_gl1packet{nullptr};
   MbdOut *m_mbdout{nullptr};
   MbdPmtContainer *m_mbdpmts{nullptr};

@@ -27,12 +27,11 @@
 // #include <trackbase_historic/SvtxTrackState_v1.h>
 #include <trackbase_historic/SvtxTrackState_v3.h>
 #include <trackbase_historic/SvtxTrack_v4.h>
+#include <trackbase_historic/SvtxTrack_v5.h>
 #include <trackbase_historic/TrackSeed.h>
 //#include <trackbase_historic/SvtxTrackSeed_v3.h>
 #include <trackbase_historic/TrackSeedContainer.h>
 #include <trackbase_historic/TrackSeedHelper.h>
-
-#include <g4detectors/PHG4TpcGeomContainer.h>
 
 #include <micromegas/MicromegasDefs.h>
 
@@ -52,7 +51,12 @@
 #include <Acts/EventData/MultiTrajectory.hpp>
 #include <Acts/EventData/MultiTrajectoryHelpers.hpp>
 #include <Acts/EventData/SourceLink.hpp>
+#include <Acts/Definitions/TrackParametrization.hpp>
 #include <Acts/EventData/TrackParameters.hpp>
+#include <Acts/Material/ISurfaceMaterial.hpp>
+#include <Acts/Material/MaterialSlab.hpp>
+#include <Acts/Surfaces/BoundaryTolerance.hpp>
+#include <Acts/Surfaces/CylinderBounds.hpp>
 #include <Acts/Surfaces/PerigeeSurface.hpp>
 #include <Acts/Surfaces/Surface.hpp>
 #include <Acts/TrackFitting/GainMatrixSmoother.hpp>
@@ -62,9 +66,15 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
+#include <limits>
+#include <sstream>
+#include <utility>
 #include <vector>
 
 namespace
@@ -334,13 +344,6 @@ int PHActsTrkFitter::InitRun(PHCompositeNode* topNode)
     m_evaluator->verbosity(Verbosity());
   }
 
-  _tpccellgeo = findNode::getClass<PHG4TpcGeomContainer>(topNode, "TPCGEOMCONTAINER");
-  if (!_tpccellgeo)
-  {
-    std::cout << PHWHERE << " unable to find DST node TPCGEOMCONTAINER" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
   _topNode = topNode;
 
   if (Verbosity() > 1)
@@ -464,7 +467,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
     {
       continue;
     }
-    
+
     unsigned int tpcid = track->get_tpc_seed_index();
     unsigned int siid = track->get_silicon_seed_index();
     auto *siseed = m_siliconSeeds->get(siid);
@@ -478,7 +481,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
 		      << " tpc crossing " << tpcseed->get_crossing()
 		      << " best crossing " << best_crossing << " crossing estimate " << track->get_crossing_estimate() << std::endl;
 	  }
-    
+
     // capture the input crossing value, and set crossing parameters
     //==============================
 
@@ -508,14 +511,14 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
 
     // no path forward in this case, move on
     if(crossing == SHRT_MAX && crossing_estimate == SHRT_MAX) { continue; }
-	
+
     /// Need to also check that the tpc seed wasn't removed by the ghost finder
     if (!tpcseed)
     {
       std::cout << "no tpc seed" << std::endl;
       continue;
     }
-	
+
     if (Verbosity() > 0)
       {
 	if (siseed)
@@ -572,7 +575,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
       }
       crossing_estimate = crossing;
     }
-	
+
     // Fit this track assuming either:
     //    crossing = best crossing value, if it exists (uses nvary = 0)
     //    crossing = crossing_estimate +/- max_bunch_search, if no INTT value exists and m_enable_crossing_estimate flag is set.
@@ -591,7 +594,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
       SourceLinkVec sourceLinks;
 
       MakeSourceLinks makeSourceLinks;
-      makeSourceLinks.initialize(_tpccellgeo, m_tGeometry, _topNode);
+      makeSourceLinks.initialize(m_tGeometry, _topNode);
       makeSourceLinks.setVerbosity(Verbosity());
       makeSourceLinks.set_pp_mode(m_pp_mode);
       makeSourceLinks.set_cluster_edge_rejection(m_cluster_edge_rejection);
@@ -618,7 +621,8 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
               m_clusterContainer,
               m_tGeometry,
               m_globalPositionWrapper,
-              this_crossing);
+              this_crossing, 
+              !m_forceSiOnlyFit); //for alignment tests, if forceSiOnlyFit is true, then we want to turn off the parametrized cluster errors when building source links
         }
 
         // tpc source links
@@ -712,79 +716,16 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
       if (m_fitSiliconMMs || m_directNavigation)
       {
 
-        // get surfaces matching source links
-        const auto surfaces_tmp = getSurfaceVector(sourceLinks);
+        // measurement surfaces and the material surfaces the track crosses before its
+        // last measurement, ordered by the radius at which the track crosses them
+        surfaces = getDirectNavigationSurfaces(sourceLinks, measurements);
 
         // skip if there is no surfaces
-        if (surfaces_tmp.empty())
+        if (surfaces.empty())
         {
           continue;
         }
 
-        for (const auto& surface_apr : m_materialSurfaces)
-        {
-          if (m_forceSiOnlyFit)
-          {
-            if (surface_apr->geometryId().volume() > 12)
-            {
-              continue;
-            }
-          }
-          //else if (m_forceTpcOnlyFit)
-          //{
-          //  if (surface_apr->geometryId().volume() < 14)
-          //  {
-          //    continue;
-          //  }
-          //}
-          bool pop_flag = false;
-          if (surface_apr->geometryId().approach() == 1)
-          {
-            surfaces.push_back(surface_apr);
-          }
-          else
-          {
-            pop_flag = true;
-            for (const auto& surface_sns : surfaces_tmp)
-            {
-              if (surface_apr->geometryId().volume() == surface_sns->geometryId().volume())
-              {
-                if (surface_apr->geometryId().layer() == surface_sns->geometryId().layer())
-                {
-                  pop_flag = false;
-                  surfaces.push_back(surface_sns);
-                }
-              }
-            }
-            if (!pop_flag)
-            {
-              surfaces.push_back(surface_apr);
-            }
-            else
-            {
-              surfaces.pop_back();
-              pop_flag = false;
-            }
-            if (surface_apr->geometryId().volume() == 12 && surface_apr->geometryId().layer() == 8)
-            {
-              for (const auto& surface_sns : surfaces_tmp)
-              {
-                if (14 == surface_sns->geometryId().volume())
-                {
-                  surfaces.push_back(surface_sns);
-                }
-              }
-            }
-          }
-        }
-        // With an empty ACTS material map, m_materialSurfaces is empty.
-        // Use the measurement surfaces directly for directed navigation.
-        if (surfaces.empty())
-        {
-          surfaces = surfaces_tmp;
-        }
-
-        checkSurfaceVec(surfaces);
         if (Verbosity() > 1)
         {
           for (const auto& surf : surfaces)
@@ -876,6 +817,10 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
       if (Verbosity() > 2)
       {
         printTrackSeed(seed);
+        if (m_fitSiliconMMs || m_directNavigation)
+        {
+          printDirectNavigationSurfaces(surfaces, position, momentum);
+        }
       }
 
       /// Set host of propagator options for Acts to do e.g. material integration
@@ -972,7 +917,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
           unsigned int trid = m_trackMap->size();
           svtx_vec[best_ivary].set_id(trid);
 
-          m_trackMap->insertWithKey(&svtx_vec[best_ivary], trid);
+          insertTrack(m_trackMap, &svtx_vec[best_ivary], trid);
         }
         else  // case where crossing is known
         {
@@ -989,7 +934,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
             if (getTrackFitResult(result, track, &newTrack, tracks, measurements))
             {
               // insert in dedicated map
-              m_directedTrackMap->insertWithKey(&newTrack, trid);
+              insertTrack(m_directedTrackMap, &newTrack, trid);
             }
 
           }  // end insert track for SC calib fit
@@ -1000,7 +945,7 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
 
             if (getTrackFitResult(result, track, &newTrack, tracks, measurements))
             {
-              m_trackMap->insertWithKey(&newTrack, trid);
+              insertTrack(m_trackMap, &newTrack, trid);
             }
           }  // end insert track for normal fit
         }  // end case where crossing is known
@@ -1029,6 +974,25 @@ void PHActsTrkFitter::loopTracks(Acts::Logging::Level logLevel)
   }
 
   return;
+}
+
+void PHActsTrkFitter::insertTrack(SvtxTrackMap* trackMap, const SvtxTrack* track, unsigned int trid) const
+{
+  if (m_useSlimTracks)
+  {
+    // the v4 track is used during the fit since its seed links are needed for the
+    // alignment states and evaluator. The v5 copy keeps only the per-detector cluster counts
+    SvtxTrack_v5 slimTrack(*track);
+
+    slimTrack.set_silicon_seed_id(m_siliconSeeds->find(track->get_silicon_seed()));
+    slimTrack.set_tpc_seed_id(m_tpcSeeds->find(track->get_tpc_seed()));
+ 
+    trackMap->insertWithKey(&slimTrack, trid);
+  }
+  else
+  {
+    trackMap->insertWithKey(track, trid);
+  }
 }
 
 bool PHActsTrkFitter::getTrackFitResult(
@@ -1162,93 +1126,222 @@ SourceLinkVec PHActsTrkFitter::filterSourceLinks(const SourceLinkVec& sourceLink
 }
 
 //__________________________________________________________________________________
-SurfacePtrVec PHActsTrkFitter::getSurfaceVector(const SourceLinkVec& sourceLinks) const
+double PHActsTrkFitter::getSurfaceRadius(const Acts::Surface* surface) const
 {
-  SurfacePtrVec surfaces;
+  // approach and layer material surfaces are cylinders centered on the beam axis,
+  // so their center does not give their radial position
+  if (surface->type() == Acts::Surface::Cylinder)
+  {
+    const auto& bounds = static_cast<const Acts::CylinderBounds&>(surface->bounds());
+    return bounds.get(Acts::CylinderBounds::eR);
+  }
+
+  const Acts::Vector3 center = surface->center(m_tGeometry->geometry().getGeoContext());
+  return std::sqrt(center.x() * center.x() + center.y() * center.y());
+}
+
+//__________________________________________________________________________________
+Acts::Vector3 PHActsTrkFitter::getMeasurementPosition(
+    const ActsSourceLink& sourceLink,
+    const ActsTrackFittingAlgorithm::MeasurementContainer& measurements) const
+{
+  const auto* surface = m_tGeometry->geometry().tGeometry->findSurface(sourceLink.geometryId());
+  const auto measurement = measurements.getMeasurement(sourceLink.index());
+  const auto indices = measurement.subspaceIndexVector();
+  const auto parameters = measurement.parameters();
+
+  Acts::Vector2 local = Acts::Vector2::Zero();
+  for (std::size_t i = 0; i < measurement.size(); ++i)
+  {
+    if (static_cast<Acts::BoundIndices>(indices[i]) == Acts::eBoundLoc0)
+    {
+      local[0] = parameters[i];
+    }
+    else if (static_cast<Acts::BoundIndices>(indices[i]) == Acts::eBoundLoc1)
+    {
+      local[1] = parameters[i];
+    }
+  }
+
+  // the direction is only used by line surfaces, which are not used for measurements
+  return surface->localToGlobal(m_transient_geocontext, local, Acts::Vector3::UnitZ());
+}
+
+//__________________________________________________________________________________
+SurfacePtrVec PHActsTrkFitter::getDirectNavigationSurfaces(
+    const SourceLinkVec& sourceLinks,
+    const ActsTrackFittingAlgorithm::MeasurementContainer& measurements) const
+{
+  // The surfaces are ordered by the radius at which the track crosses them.
+  // - the planar measurement surfaces of one acts layer are not at a common radius once
+  //   surveys and alignment are applied, so their center radius can be a few mm away from
+  //   where the track crosses them. Use the radius of the measurement itself instead.
+  // - material surfaces are cylinders centered on the beam axis, crossed at their radius.
+  // The direct navigator silently skips a surface that is behind the track, which loses a
+  // measurement if a material surface is placed before a measurement it actually lies beyond.
+  // Material surfaces within m_materialSurfaceTieMargin of a measurement are therefore placed
+  // after it; with a margin no larger than the navigator near limit (100 um) they are still
+  // reached when they actually lie before the measurement.
+  struct MeasurementPoint
+  {
+    double r;
+    double z;
+  };
+  std::vector<MeasurementPoint> points;
+  points.reserve(sourceLinks.size());
+
+  std::vector<std::pair<double, const Acts::Surface*>> sortedSurfaces;
+  sortedSurfaces.reserve(sourceLinks.size() + m_materialSurfaces.size());
+
   for (const auto& sl : sourceLinks)
   {
     const ActsSourceLink asl = sl.get<ActsSourceLink>();
-    const auto* const surf = m_tGeometry->geometry().tGeometry->findSurface(asl.geometryId());
-    //std::cout << "sl: " <<  surf->geometryId() << std::endl;
-    surfaces.push_back(surf);
+    const auto* surface = m_tGeometry->geometry().tGeometry->findSurface(asl.geometryId());
+    const Acts::Vector3 position = getMeasurementPosition(asl, measurements);
+    const double radius = std::hypot(position.x(), position.y());
+    sortedSurfaces.emplace_back(radius, surface);
+    points.push_back({radius, position.z()});
+  }
+
+  if (points.empty())
+  {
+    return {};
+  }
+
+  std::sort(points.begin(), points.end(), [](const auto& lhs, const auto& rhs)
+            { return lhs.r < rhs.r; });
+  const double maxMeasurementRadius = points.back().r;
+
+  // z of the track at a given radius, interpolated between the measurements and
+  // extrapolated linearly from the innermost or outermost two
+  const auto zAtRadius = [&points](double radius)
+  {
+    if (points.size() == 1)
+    {
+      return points.front().z;
+    }
+    auto upper = std::lower_bound(points.begin(), points.end(), radius,
+                                  [](const auto& point, double r)
+                                  { return point.r < r; });
+    if (upper == points.begin())
+    {
+      ++upper;
+    }
+    else if (upper == points.end())
+    {
+      --upper;
+    }
+    const auto lower = std::prev(upper);
+    const double dr = upper->r - lower->r;
+    if (dr <= 0)
+    {
+      return lower->z;
+    }
+    return lower->z + (radius - lower->r) * (upper->z - lower->z) / dr;
+  };
+
+  const auto& gctx = m_tGeometry->geometry().getGeoContext();
+  for (const auto* surface : m_materialSurfaces)
+  {
+    // material on sensitive surfaces is picked up from the measurement surfaces
+    if (surface->geometryId().sensitive() != 0)
+    {
+      continue;
+    }
+
+    // the fit stops at the last measurement, so material beyond it is not needed
+    const double radius = getSurfaceRadius(surface);
+    if (radius > maxMeasurementRadius)
+    {
+      continue;
+    }
+
+    // skip cylinders the track does not cross within their length, e.g. tracks
+    // leaving the barrel through the endcap
+    if (surface->type() == Acts::Surface::Cylinder)
+    {
+      const auto& bounds = static_cast<const Acts::CylinderBounds&>(surface->bounds());
+      const double zLocal = zAtRadius(radius) - surface->center(gctx).z();
+      if (std::abs(zLocal) > bounds.get(Acts::CylinderBounds::eHalfLengthZ))
+      {
+        continue;
+      }
+    }
+
+    sortedSurfaces.emplace_back(radius + m_materialSurfaceTieMargin, surface);
+  }
+
+  std::stable_sort(sortedSurfaces.begin(), sortedSurfaces.end(),
+                   [](const auto& lhs, const auto& rhs)
+                   { return lhs.first < rhs.first; });
+
+  SurfacePtrVec surfaces;
+  surfaces.reserve(sortedSurfaces.size());
+  for (const auto& [radius, surface] : sortedSurfaces)
+  {
+    surfaces.push_back(surface);
   }
 
   return surfaces;
 }
 
-void PHActsTrkFitter::checkSurfaceVec(SurfacePtrVec& surfaces) const
+//__________________________________________________________________________________
+void PHActsTrkFitter::printDirectNavigationSurfaces(const SurfacePtrVec& surfaces,
+                                                    const Acts::Vector3& position,
+                                                    const Acts::Vector3& momentum) const
 {
-  if (surfaces.size() < 2)
+  // the material is evaluated where a straight line from the seed crosses each surface,
+  // so the phi bin is approximate for low momentum tracks
+  const auto& gctx = m_tGeometry->geometry().getGeoContext();
+  const Acts::Vector3 direction = momentum.normalized();
+
+  std::cout << "PHActsTrkFitter::printDirectNavigationSurfaces - " << surfaces.size()
+            << " surfaces, seed position " << position.transpose()
+            << " eta " << std::atanh(direction.z()) << std::endl;
+  std::cout << "  idx  type  geometry id                           surface r [mm]  cross r [mm]  cross z [mm]  t/X0 (normal)  t/X0 (path)  cumulative" << std::endl;
+
+  double cumulative = 0;
+  for (std::size_t i = 0; i < surfaces.size(); ++i)
   {
-    return;
-  }
+    const auto* surface = surfaces[i];
+    const bool isMeasurement = surface->geometryId().sensitive() != 0;
 
-  // Do not assume volume id has the correct layer, check the surface radius
+    double crossR = std::numeric_limits<double>::quiet_NaN();
+    double crossZ = std::numeric_limits<double>::quiet_NaN();
+    double normalX0 = 0;
+    double pathX0 = 0;
 
-  for (unsigned int i = 0; i < surfaces.size() - 1; i++)
-  {
-
-    const auto& surface = surfaces.at(i);
-    if (std::find(m_materialSurfaces.begin(), m_materialSurfaces.end(), surface) != m_materialSurfaces.end())
+    const auto intersection = surface->intersect(gctx, position, direction, Acts::BoundaryTolerance::Infinite()).closestForward();
+    if (intersection.isValid())
     {
-      continue;
-    }
-
-    const auto thisVolume = surface->geometryId().volume();
-
-    const Acts::Vector3 this_center = surface->center(m_tGeometry->geometry().getGeoContext());
-    double thisRadius = sqrt(this_center.x()*this_center.x()+this_center.y()*this_center.y());
-
-    const auto* nextSurface = surfaces.at(i + 1);
-    const auto nextVolume = nextSurface->geometryId().volume();
-
-    const Acts::Vector3 next_center = nextSurface->center(m_tGeometry->geometry().getGeoContext());
-    double nextRadius = sqrt(next_center.x()*next_center.x()+next_center.y()*next_center.y());
-
-    if (surface->geometryId().approach() == 2 || nextSurface->geometryId().approach() == 2)
-    {
-      continue;
-    }
-
-    /// Implement a check to ensure surfaces are sorted
-    if (nextVolume == thisVolume)
-    {
-      
-      //    if (nextLayer < thisLayer)
-      if (nextRadius < thisRadius)
+      const Acts::Vector3 crossing = intersection.position();
+      crossR = std::hypot(crossing.x(), crossing.y());
+      crossZ = crossing.z();
+      if (const auto* material = surface->surfaceMaterial())
       {
-        if(Verbosity() > 0)
-        {
-        std::cout
-            << "PHActsTrkFitter::checkSurfaceVec - "
-            << "Surface not in order... removing surface"
-            << surface->geometryId() << " with radius " << thisRadius << std::endl;
-            std::cout << "   approach " << nextSurface->geometryId().approach() << " volume " << nextSurface->geometryId().volume() << " layer " << nextSurface->geometryId().layer() << std::endl;
-        std::cout << "    Next surface is " << nextSurface->geometryId() << " with radius " << nextRadius << std::endl;
-        }
-        surfaces.erase(surfaces.begin() + i);
-
-        /// Subtract one so we don't skip a surface
-        --i;
-        continue;
+        normalX0 = material->materialSlab(crossing).thicknessInX0();
+        pathX0 = normalX0 * surface->pathCorrection(gctx, crossing, direction);
       }
     }
-    else
-    {
-      if (nextVolume < thisVolume)
-      {
-        std::cout
-            << "PHActsTrkFitter::checkSurfaceVec - "
-            << "Volume not in order... removing surface"
-            << surface->geometryId() << std::endl;
+    cumulative += pathX0;
 
-        surfaces.erase(surfaces.begin() + i);
+    std::ostringstream geometryIdString;
+    geometryIdString << surface->geometryId();
 
-        /// Subtract one so we don't skip a surface
-        --i;
-        continue;
-      }
-    }
+    std::cout << "  " << std::setw(3) << i
+              << "  " << (isMeasurement ? "meas" : "mat ")
+              << "  " << std::left << std::setw(40) << geometryIdString.str() << std::right
+              << std::fixed << std::setprecision(1)
+              << std::setw(12) << getSurfaceRadius(surface)
+              << std::setw(14) << crossR
+              << std::setw(14) << crossZ
+              << std::setprecision(5)
+              << std::setw(15) << normalX0
+              << std::setw(13) << pathX0
+              << std::setw(12) << cumulative
+              << std::defaultfloat
+              << (pathX0 > 0.05 ? "  <-- large" : "")
+              << std::endl;
   }
 }
 
@@ -1294,8 +1387,8 @@ void PHActsTrkFitter::updateSvtxTrack(
   track->set_z(params.position(m_transient_geocontext)(2) / Acts::UnitConstants::cm);
 
   auto* seed = track->get_tpc_seed();
-
-  if(!m_forceSiOnlyFit)
+  
+  if(!m_forceSiOnlyFit || !m_siOnlyTpcSeedPt)
   {
     track->set_px(params.momentum()(0));
     track->set_py(params.momentum()(1));
@@ -1373,7 +1466,7 @@ void PHActsTrkFitter::updateSvtxTrack(
         }
       };
 
-      if( m_extrapolation_mode == ExtrapolationMode::Default )
+      if( m_extrapolation_mode == ExtrapolationMode::Legacy )
       {
 
         // extrapolate from track parameters
@@ -1480,7 +1573,7 @@ void PHActsTrkFitter::updateSvtxTrack(
 
       switch( m_extrapolation_mode )
       {
-        case ExtrapolationMode::Default:
+        case ExtrapolationMode::Legacy:
         {
 
           // extrapolate from track parameters

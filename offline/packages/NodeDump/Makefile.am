@@ -15,7 +15,6 @@ pkginclude_HEADERS = \
 libphnodedump_la_SOURCES = \
   Dumper.cc \
   DumpCaloPacket.cc \
-  DumpCaloPacketContainer.cc \
   DumpCaloTriggerInfo.cc \
   DumpCdbUrlSave.cc \
   DumpCentralityInfo.cc \
@@ -29,9 +28,12 @@ libphnodedump_la_SOURCES = \
   DumpInttDeadMap.cc \
   DumpInttRawHitContainer.cc \
   DumpJetMap.cc \
+  DumpLaserClusterContainer.cc \
+  DumpLaserEventInfo.cc \
   DumpMbdGeom.cc \
   DumpMbdOut.cc \
   DumpMbdPmtContainer.cc \
+  DumpMbdRawContainer.cc \
   DumpMbdVertexMap.cc \
   DumpMicromegasRawHitContainer.cc \
   DumpMvtxRawEvtHeader.cc \
@@ -65,8 +67,14 @@ libphnodedump_la_SOURCES = \
   DumpSyncObject.cc \
   DumpTowerBackground.cc \
   DumpTowerInfoContainer.cc \
+  DumpTpc_AssembledTrackContainer.cc \
+  DumpTpcCrossingDecisionContainer.cc \
+  DumpTpc_PolyClusterContainer.cc \
+  DumpTpc_PolyTrackContainer.cc \
+  DumpTpc_PolyTrackVertexContainer.cc \
   DumpTpcRawHitContainer.cc \
   DumpTpcSeedTrackMap.cc \
+  DumpTriggerRunInfo.cc \
   DumpTrackSeedContainer.cc \
   DumpTrkrClusterContainer.cc \
   DumpTrkrClusterHitAssoc.cc \
@@ -98,6 +106,8 @@ libphnodedump_la_LIBADD = \
   -lphg4hit \
   -lphhepmc_io \
   -lSubsysReco \
+  -ltpc_io \
+  -ltpctrackreco_io \
   -ltrackbase_historic \
   -ltrack_io \
   -lzdcinfo_io

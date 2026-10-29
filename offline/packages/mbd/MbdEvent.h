@@ -27,7 +27,6 @@ class TF1;
 class TCanvas;
 #ifndef ONLINE
 class CaloPacket;
-class CaloPacketContainer;
 class Gl1Packet;
 class PHG4TruthInfoContainer;
 class PHG4VtxPoint;
@@ -37,6 +36,7 @@ class MbdEvent
 {
  public:
   MbdEvent(const int cal_pass = 0, const bool proc_charge = false);
+
   virtual ~MbdEvent();
 
   int InitRun();

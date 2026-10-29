@@ -2,7 +2,6 @@
 #include "DumpObject.h"
 
 #include "DumpCaloPacket.h"
-#include "DumpCaloPacketContainer.h"
 #include "DumpCaloTriggerInfo.h"
 #include "DumpCdbUrlSave.h"
 #include "DumpCentralityInfo.h"
@@ -16,9 +15,12 @@
 #include "DumpInttRawHitContainer.h"
 #include "DumpJetContainer.h"
 #include "DumpJetMap.h"
+#include "DumpLaserClusterContainer.h"
+#include "DumpLaserEventInfo.h"
 #include "DumpMbdGeom.h"
 #include "DumpMbdOut.h"
 #include "DumpMbdPmtContainer.h"
+#include "DumpMbdRawContainer.h"
 #include "DumpMbdVertexMap.h"
 #include "DumpMicromegasRawHitContainer.h"
 #include "DumpMvtxRawEvtHeader.h"
@@ -51,8 +53,14 @@
 #include "DumpSyncObject.h"
 #include "DumpTowerBackground.h"
 #include "DumpTowerInfoContainer.h"
+#include "DumpTpcCrossingDecisionContainer.h"
 #include "DumpTpcRawHitContainer.h"
 #include "DumpTpcSeedTrackMap.h"
+#include "DumpTpc_AssembledTrackContainer.h"
+#include "DumpTpc_PolyClusterContainer.h"
+#include "DumpTpc_PolyTrackContainer.h"
+#include "DumpTpc_PolyTrackVertexContainer.h"
+#include "DumpTriggerRunInfo.h"
 #include "DumpTrackSeedContainer.h"
 #include "DumpTrkrClusterContainer.h"
 #include "DumpTrkrClusterCrossingAssoc.h"
@@ -199,10 +207,6 @@ int PHNodeDump::AddDumpObject(const std::string &NodeName, PHNode *node)
       {
         newdump = new DumpCaloPacket(NodeName);
       }
-      else if (tmp->InheritsFrom("CaloPacketContainer"))
-      {
-        newdump = new DumpCaloPacketContainer(NodeName);
-      }
       else if (tmp->InheritsFrom("CaloTriggerInfo"))
       {
         newdump = new DumpCaloTriggerInfo(NodeName);
@@ -251,6 +255,14 @@ int PHNodeDump::AddDumpObject(const std::string &NodeName, PHNode *node)
       {
         newdump = new DumpJetMap(NodeName);
       }
+      else if (tmp->InheritsFrom("LaserClusterContainer"))
+      {
+        newdump = new DumpLaserClusterContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("LaserEventInfo"))
+      {
+        newdump = new DumpLaserEventInfo(NodeName);
+      }
       else if (tmp->InheritsFrom("JetContainer"))
       {
         newdump = new DumpJetContainer(NodeName);
@@ -266,6 +278,10 @@ int PHNodeDump::AddDumpObject(const std::string &NodeName, PHNode *node)
       else if (tmp->InheritsFrom("MbdPmtContainer"))
       {
         newdump = new DumpMbdPmtContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("MbdRawContainer"))
+      {
+        newdump = new DumpMbdRawContainer(NodeName);
       }
       else if (tmp->InheritsFrom("MbdVertexMap"))
       {
@@ -395,6 +411,26 @@ int PHNodeDump::AddDumpObject(const std::string &NodeName, PHNode *node)
       {
         newdump = new DumpTowerInfoContainer(NodeName);
       }
+      else if (tmp->InheritsFrom("Tpc_AssembledTrackContainer"))
+      {
+        newdump = new DumpTpc_AssembledTrackContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("TpcCrossingDecisionContainer"))
+      {
+        newdump = new DumpTpcCrossingDecisionContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("Tpc_PolyClusterContainer"))
+      {
+        newdump = new DumpTpc_PolyClusterContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("Tpc_PolyTrackContainer"))
+      {
+        newdump = new DumpTpc_PolyTrackContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("Tpc_PolyTrackVertexContainer"))
+      {
+        newdump = new DumpTpc_PolyTrackVertexContainer(NodeName);
+      }
       else if (tmp->InheritsFrom("TpcRawHitContainer"))
       {
         newdump = new DumpTpcRawHitContainer(NodeName);
@@ -406,6 +442,10 @@ int PHNodeDump::AddDumpObject(const std::string &NodeName, PHNode *node)
       else if (tmp->InheritsFrom("TrackSeedContainer"))
       {
         newdump = new DumpTrackSeedContainer(NodeName);
+      }
+      else if (tmp->InheritsFrom("TriggerRunInfo"))
+      {
+        newdump = new DumpTriggerRunInfo(NodeName);
       }
       else if (tmp->InheritsFrom("TrkrClusterContainer"))
       {

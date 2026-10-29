@@ -3,7 +3,7 @@
 #include "MbdGeomV1.h"
 #include "MbdOutV2.h"
 #include "MbdRawContainerV2.h"
-#include "MbdPmtContainerV1.h"
+#include "MbdPmtContainerV2.h"
 #include "MbdPmtSimContainerV1.h"
 
 #include <globalvertex/MbdVertexMapv1.h>
@@ -26,7 +26,6 @@
 #include <phool/phool.h>
 
 #include <ffaobjects/EventHeader.h>
-#include <ffarawobjects/CaloPacketContainer.h>
 #include <ffarawobjects/Gl1Packet.h>
 
 #include <TF1.h>
@@ -81,7 +80,7 @@ int MbdReco::process_event(PHCompositeNode *topNode)
 {
   getNodes(topNode);
 
-  if ( (m_mbdevent==nullptr && m_mbdpackets==nullptr && m_mbdpacket[0]==nullptr && m_mbdpacket[1]==nullptr) || (m_mbdraws==nullptr && m_mbdpmts==nullptr) )
+  if ( (m_mbdevent==nullptr && m_mbdpacket[0]==nullptr && m_mbdpacket[1]==nullptr) || (m_mbdraws==nullptr && m_mbdpmts==nullptr) )
   {
     static int counter = 0;
     if ( counter<2 )
@@ -104,7 +103,7 @@ int MbdReco::process_event(PHCompositeNode *topNode)
   }
 
   // Process raw waveforms from real data
-  if ( m_mbdevent!=nullptr || m_mbdpackets!=nullptr || m_mbdpacket[0]==nullptr || m_mbdpacket[1]==nullptr)
+  if ( m_mbdevent!=nullptr || m_mbdpacket[0]==nullptr || m_mbdpacket[1]==nullptr)
   {
     int status = Fun4AllReturnCodes::EVENT_OK;
     if ( m_evtheader!=nullptr )
@@ -117,13 +116,8 @@ int MbdReco::process_event(PHCompositeNode *topNode)
     {
       status = m_mbdevent->SetRawData(m_event, m_mbdraws, m_mbdpmts);
     }
-    else if ( m_mbdpackets!=nullptr || m_mbdpacket[0]!=nullptr || m_mbdpacket[1]!=nullptr)
+    else if ( m_mbdpacket[0]!=nullptr || m_mbdpacket[1]!=nullptr)
     {
-      if (m_mbdpackets)
-      {
-	m_mbdpacket[0] = m_mbdpackets->getPacketbyId(1001);
-	m_mbdpacket[1] = m_mbdpackets->getPacketbyId(1002);
-      }
       status = m_mbdevent->SetRawData(m_mbdpacket,m_mbdraws,m_mbdpmts,m_gl1packet);
     }
 
@@ -250,7 +244,7 @@ int MbdReco::createNodes(PHCompositeNode *topNode)
   if (!m_mbdpmts && !_fitsonly)
   {
     std::cout << "Creating MbdPmtContainer Node " << std::endl;
-    m_mbdpmts = new MbdPmtContainerV1();
+    m_mbdpmts = new MbdPmtContainerV2();
     PHIODataNode<PHObject> *MbdPmtContainerNode = new PHIODataNode<PHObject>(m_mbdpmts, "MbdPmtContainer", "PHObject");
     bbcNode->addNode(MbdPmtContainerNode);
   }
@@ -266,7 +260,10 @@ int MbdReco::createNodes(PHCompositeNode *topNode)
   else
   {
     //std::cout << "IS A DST_CALOFIT" << std::endl;
-    _rawdstflag = 1;
+    if ( !_fitsonly )
+    {
+      _rawdstflag = 1;
+    }
   }
 
   PHCompositeNode *globalNode = dynamic_cast<PHCompositeNode *>(dstiter.findFirst("PHCompositeNode", "GLOBAL"));
@@ -302,11 +299,9 @@ int MbdReco::getNodes(PHCompositeNode *topNode)
   // std::cout << "event addr " << (unsigned int)m_event << endl;
 
   // Get the raw data from event combined DST
-  m_mbdpackets = findNode::getClass<CaloPacketContainer>(topNode, "MBDPackets");
-
   m_mbdpacket[0] = findNode::getClass<CaloPacket>(topNode,1001);
   m_mbdpacket[1] = findNode::getClass<CaloPacket>(topNode,1002);
-  if (!m_event && !m_mbdpackets && !m_mbdpacket[0] && !m_mbdpacket[1] && _rawdstflag==0 )
+  if (!m_event && !m_mbdpacket[0] && !m_mbdpacket[1] && _rawdstflag==0 )
   {
     // not PRDF, not event combined DST, not DST_CALOFIT, so we assume this is a sim file
     _simflag = 1;
