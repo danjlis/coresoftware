@@ -31,6 +31,7 @@
 #include <algorithm>  // for std::max, std::min
 #include <cmath>
 #include <iostream>  // for operator<<, basic_ostream
+#include <limits>
 #include <string>
 
 JetSmear::JetSmear(const std::string &name)
@@ -143,6 +144,12 @@ int JetSmear::process_event(PHCompositeNode *topNode)
   }
   m_run = evtHeader->get_RunNumber();
   m_event = evtHeader->get_EvtSequence();
+
+  if (Verbosity() > 10)
+  {
+    std::cout << "JetSmear::process_event : start of run " << m_run << " event " << m_event
+              << ", output node " << m_outputRecoNode << std::endl;
+  }
 
   m_reco_jetcontainer = findNode::getClass<JetContainer>(topNode, m_inputRecoNode);
   if (!m_reco_jetcontainer)
@@ -349,7 +356,8 @@ void JetSmear::smear_reco_jets()
     Jet *raw_jet = m_raw_jets[ijet];
     double scale = 1.;
     // Matched jets smear by the truth pT; unmatched jets (if enabled) by the reco pT.
-    if (truth_jet || m_smear_unmatched_reco)
+    const bool smeared = truth_jet || m_smear_unmatched_reco;
+    if (smeared)
       {
 	const double ref_pt = truth_jet ? truth_jet->get_pt() : reco_jet->get_pt();
 	double lookup_pt = ref_pt;
@@ -370,6 +378,21 @@ void JetSmear::smear_reco_jets()
     out->set_py(reco_jet->get_py() * scale);
     out->set_pz(reco_jet->get_pz() * scale);
     out->set_e(out->get_e() * scale);
+
+    if (Verbosity() > 10)
+    {
+      std::cout << "JetSmear::smear_reco_jets : jet " << reco_jet->get_id()
+                << " raw pT " << (raw_jet ? raw_jet->get_pt() : std::numeric_limits<float>::quiet_NaN())
+                << " calib pT " << reco_jet->get_pt();
+      if (smeared)
+      {
+        std::cout << " smear pT " << out->get_pt() << std::endl;
+      }
+      else
+      {
+        std::cout << " no smear" << std::endl;
+      }
+    }
   }
 }
 
