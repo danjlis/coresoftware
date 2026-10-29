@@ -100,7 +100,6 @@ void Jetv2::Reset()
   _emcal_frac = std::numeric_limits<float>::quiet_NaN();
   _ihcal_frac = std::numeric_limits<float>::quiet_NaN();
   _ohcal_frac = std::numeric_limits<float>::quiet_NaN();
-  _reweight = 1.0;
   _comp_ids.clear();
   _properties.clear();
 }

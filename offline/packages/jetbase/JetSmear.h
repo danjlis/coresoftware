@@ -5,12 +5,12 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 class CDBHistos;
 class PHCompositeNode;
-class TRandom3;
 class JetContainer;
 class Jet;
 class TF1;
@@ -28,7 +28,7 @@ class JetSmear : public SubsysReco
   int process_event(PHCompositeNode *topNode) override;
   int CreateNodeTree(PHCompositeNode *topNode);
 
-  // Setters (both methods).
+  // Required: node names and jet radius have no defaults and must be set.
   void set_InputTruthNode(const std::string &inputNode) { m_inputTruthNode = inputNode; }
   void set_InputRecoNode(const std::string &inputNode) { m_inputRecoNode = inputNode; }
   void set_InputCalibNode(const std::string &inputNode) { m_inputCalibNode = inputNode; }
@@ -40,7 +40,15 @@ class JetSmear : public SubsysReco
   void set_UseEMfracCalib(bool use) { m_useEMfracCalib = use; }
   void set_UsePileupCorr(bool use) { m_usePileup = use; }
   void set_Systematic(int sys) { m_sys = sys; }
+  // true = smear unmatched reco jets using their own reco pT; false (default) = leave them unsmeared.
+  void set_SmearUnmatchedReco(bool smear) { m_smear_unmatched_reco = smear; }
   
+  // Smearing seed: each jet's random draw is a hash of (sample id, run, event, jet id),
+  // so it is reproducible and independent of job splitting. The systematic is not part of the
+  // hash, so nominal/sysup/sysdown use the same draw per jet and only the width changes.
+  // Set a distinct sample id for each simulation sample in a run.
+  void set_SampleId(int id) { m_sampleId = id; }
+
   void set_CalibFile(const std::string &path) { m_calibFileOverride = path; }  // local file override (default: CDB)
 
   
@@ -48,22 +56,26 @@ class JetSmear : public SubsysReco
   // Functions (common).
   static std::string fetchCalibDir(const char *calibType);
   bool m_hasVertex{false};
-  float m_event_reweight{0.0};
   // Matching
   double getDR(Jet *j1, Jet *j2);
   int initSmearing();
   void match_reco_truth();
   void smear_reco_jets();
+  void copy_jet(Jet *in, Jet *raw, Jet *out);
+  static uint64_t splitmix64(uint64_t x);
+  double jetGaus(int jet_id) const;
+  void copy_container_info();
   
   std::vector<Jet*> m_calib_jets;
+  std::vector<Jet*> m_raw_jets;  // raw jet for each entry of m_calib_jets (nullptr if none)
   std::vector<Jet*> m_truth_jets;
   std::vector<std::pair<Jet*, Jet*>> m_matched_jets;
   
   // Input.
-  std::string m_inputRecoNode{"AntiKt_Tower_r04"};
-  std::string m_inputCalibNode{"AntiKt_Tower_r04_Calib"};
-  std::string m_inputTruthNode{"AntiKt_Truth_r04"};
-  std::string m_outputRecoNode{"AntiKt_Tower_r04_Calib_Smear"};
+  std::string m_inputRecoNode;
+  std::string m_inputCalibNode;
+  std::string m_inputTruthNode;
+  std::string m_outputRecoNode;
 
   JetContainer *m_reco_jetcontainer{nullptr};
   JetContainer *m_calib_jetcontainer{nullptr};
@@ -71,17 +83,17 @@ class JetSmear : public SubsysReco
   JetContainer *m_output_jetcontainer{nullptr};
 
   std::string m_calibFileOverride;              // EMfrac method: if set, read this file instead of the CDB payload
-  float jet_radius{0.4};                        // Jet radius.
-  float dr_cut{0.3};
+  float jet_radius{-1};                         // Jet radius (required, no default).
+  float dr_cut{1.0};
   bool m_useEMfracCalib{true};                  // true = EMfrac method (default), false = legacy method
-  bool m_useEMfracReweight{true};                  // true = EMfrac method (default), false = legacy method
   bool m_usePileup{true};
   int m_sys{0};
-  TRandom3 *m_rng{nullptr};
+  bool m_smear_unmatched_reco{false};
+  int m_sampleId{0};
+  int m_run{0};    // from EventHeader, per event
+  int m_event{0};  // from EventHeader, per event
 
-  TFile *m_JetSmearFile{nullptr};
-  TH1 *m_JerSmearBand{nullptr};
-  TH1 *m_EMReweight{nullptr};   // h2d_jes_calib_r0R: truth-equivalent pT vs (reco pT, EMCal fraction)
+  TH1 *m_JerSmearBand{nullptr};  // owned clone; the CDB file is closed after loading
 
 };
 

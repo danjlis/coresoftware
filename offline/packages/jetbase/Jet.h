@@ -193,13 +193,6 @@ class Jet : public PHObject
   virtual float get_ohcal_frac() const { return std::numeric_limits<float>::quiet_NaN(); }
   virtual void set_ohcal_frac(float) { return; }
 
-  // Reweight function in the jet object
-  // Filled During JetSmear reconstruction
-  // Possible to allow for multiple types of reweights, but for now just one at a time
-  
-  virtual float get_reweight() const { return std::numeric_limits<float>::quiet_NaN(); }
-  virtual int hasReweight() const { return std::numeric_limits<int>::quiet_NaN(); }
-  virtual void set_reweight(float) { return; }
   // --------------------------------------------------------------------------
   // Functions for jet properties (always float values)
   // --------------------------------------------------------------------------
