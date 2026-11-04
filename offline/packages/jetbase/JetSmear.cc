@@ -91,7 +91,6 @@ int JetSmear::initSmearing()
 
   const std::string r_suffix = "_r0" + std::to_string(r_index);
   const std::string jes_suffix = m_useEMfracCalib ? "_EMfracJES":"_legacyJES";
-  const std::string pileup_suffix = m_usePileup ? "_pileup":"_nop";
   std::string systematic_suffix = "_nominal";
 
   if (m_sys < 0)
@@ -102,7 +101,7 @@ int JetSmear::initSmearing()
     {
       systematic_suffix = "_sysup";
     }
-  const std::string histo_name = "h_jer_smear" + r_suffix + pileup_suffix + jes_suffix + systematic_suffix;
+  const std::string histo_name = "h_jer_smear" + r_suffix + jes_suffix + systematic_suffix;
 
   // Histogram is cloned and detached from the file so it can be closed below.
   delete m_JerSmearBand;

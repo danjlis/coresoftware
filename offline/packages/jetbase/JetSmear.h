@@ -38,7 +38,7 @@ class JetSmear : public SubsysReco
 
   // Method selection: true (default) = EMfrac method, false = legacy method.
   void set_UseEMfracCalib(bool use) { m_useEMfracCalib = use; }
-  void set_UsePileupCorr(bool use) { m_usePileup = use; }
+
   void set_Systematic(int sys) { m_sys = sys; }
   // true = smear unmatched reco jets using their own reco pT; false (default) = leave them unsmeared.
   void set_SmearUnmatchedReco(bool smear) { m_smear_unmatched_reco = smear; }
@@ -86,7 +86,6 @@ class JetSmear : public SubsysReco
   float jet_radius{-1};                         // Jet radius (required, no default).
   float dr_cut{1.0};
   bool m_useEMfracCalib{true};                  // true = EMfrac method (default), false = legacy method
-  bool m_usePileup{true};
   int m_sys{0};
   bool m_smear_unmatched_reco{false};
   int m_sampleId{0};
